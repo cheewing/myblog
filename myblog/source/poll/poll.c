@@ -2,19 +2,20 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <fcntl.h>
+#include <poll.h>
 
 #define fifo_filename "test_fifo"
 
 int main(int argc, char *argv[])
 {
-    fd_set rfds;
-    struct timeval tv;
-    int ret; 
+    int ret;
     int fd;
+    struct pollfd fds[2];
 
     ret = mkfifo(fifo_filename, 0666);
-    if (ret != 0)
+    if (ret != 0) {
         perror("mkfifo error");
+    }
 
     fd = open(fifo_filename, O_RDWR);
     if (fd < 0) {
@@ -23,25 +24,25 @@ int main(int argc, char *argv[])
     }
 
     ret = 0;
+    
+    fds[0].fd = 0;
+    fds[1].fd = fd;
+
+    fds[0].events = POLLIN;
+    fds[1].events = POLLIN;
 
     while (1) {
-        FD_ZERO(&rfds);
-        FD_SET(0, &rfds);
-        FD_SET(fd, &rfds);
+        ret = poll(fds, 2, -1);
 
-        tv.tv_sec = 1;
-        tv.tv_usec = 0;
-
-        ret = select(FD_SETSIZE, &rfds, NULL, NULL, NULL);
-        
         if (ret == -1) {
-            perror("select error");
+            perror("epoll_wait error");
         } else if (ret > 0) {
             char buf[100] = {0};
-            if (FD_ISSET(0, &rfds)) {
+
+            if ((fds[0].revents & POLLIN) == POLLIN) {
                 read(0, buf, sizeof(buf));
                 printf("stdin buf = %s\n", buf);
-            } else if (FD_ISSET(fd, &rfds)) {
+            } else if ((fds[1].revents & POLLIN == POLLIN)) {
                 read(fd, buf, sizeof(buf));
                 printf("fifo buf = %s\n", buf);
             }
@@ -49,6 +50,6 @@ int main(int argc, char *argv[])
             printf("time out\n");
         }
     }
-    
+
     exit(0);
 }
