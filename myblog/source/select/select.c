@@ -1,3 +1,8 @@
+/**
+ * select.c
+ * 多路复用select的用法
+ */
+
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>

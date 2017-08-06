@@ -1,3 +1,8 @@
+/**
+ * write_fifo.c
+ * 给命名管道发送信息
+ */
+
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
